@@ -6,15 +6,10 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-
-import com.google.gson.Gson;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import android.widget.Toast;
 
 public class NewProductActivity extends AppCompatActivity {
 
@@ -25,12 +20,6 @@ public class NewProductActivity extends AppCompatActivity {
     EditText inputName;
     EditText inputPrice;
     EditText inputDesc;
-
-    // url to create new product
-    private static String url_create_product = "http://10.0.2.2:8080/androidhive/create_product.php";
-
-    // JSON Node names
-    private static final String TAG_SUCCESS = "success";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +49,7 @@ public class NewProductActivity extends AppCompatActivity {
      * Background Async Task to Create new product
      * */
     @SuppressLint("StaticFieldLeak")
-    class CreateNewProduct extends AsyncTask<String, String, String> {
+    class CreateNewProduct extends AsyncTask<String, String, Void> {
 
         /**
          * Before starting background thread Show Progress Dialog
@@ -78,7 +67,7 @@ public class NewProductActivity extends AppCompatActivity {
         /**
          * Creating product
          * */
-        protected String doInBackground(String... args) {
+        protected Void doInBackground(String... args) {
             String name = inputName.getText().toString();
             String price = inputPrice.getText().toString();
             String description = inputDesc.getText().toString();
@@ -88,33 +77,22 @@ public class NewProductActivity extends AppCompatActivity {
             product.price = price;
             product.description = description;
 
-            Gson gson = new Gson();
-
             // getting JSON Object
             // Note that create product url accepts POST method
-            String json = jsonParser.makeHttpRequest(url_create_product,
-                    "POST", gson.toJson(product));
+            ApiResponse response = jsonParser.makeHttpRequest(Utils.NEW_PRODUCT_URL,
+                    "POST", product);
 
-            // check log cat fro response
-            Log.d("Create Response", json);
+            if (response.getSuccess() == 1){
+                // successfully created product
+                    Intent i = new Intent(getApplicationContext(), AllProductsActivity.class);
+                    startActivity(i);
 
-            // check for success tag
-//            try {
-//                int success = json.getInt(TAG_SUCCESS);
-//
-//                if (success == 1) {
-//                    // successfully created product
-//                    Intent i = new Intent(getApplicationContext(), AllProductsActivity.class);
-//                    startActivity(i);
-//
-//                    // closing this screen
-//                    finish();
-//                } else {
-//                    // failed to create product
-//                }
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
+                    // closing this screen
+                    finish();
+            } else {
+                // failed to create product
+                Toast.makeText(NewProductActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
+            }
 
             return null;
         }
